@@ -3,6 +3,8 @@
 const EASY = 4;
 const MEDIUM = 8;
 const HARD = 12;
+const FLAG = '🚩';
+const BOMB = '💣';
 
 var gBoard;
 var gGame = {
@@ -19,6 +21,7 @@ var gLevel = {
 
 function onInit() {
   gBoard = buildBoard(gLevel.size);
+  buildBombs(gLevel.mines);
   renderBoard(gBoard, gLevel.level);
 }
 
@@ -36,6 +39,26 @@ function buildBoard(size) {
     }
   }
   return board;
+}
+
+function buildBombs(size) {
+  //! Bombs may be on the same cell!
+  for (var k = 0; k < size; k++) {
+    const cell = getRandomCell(gBoard);
+    cell.cell.isMine = true;
+    console.log(cell);
+  }
+}
+
+function onCellClicked(el, ev) {
+  const cellPos = getPos(el);
+  if (ev.button === 2) {
+    gGame.markedCount++;
+    gBoard[cellPos.i][cellPos.j].isMarked = true;
+    renderCell(cellPos, FLAG);
+  } else {
+    el.classList.add('revealed');
+  }
 }
 
 function onSetLevel(el) {
