@@ -7,21 +7,26 @@ const FLAG = '🚩';
 const BOMB = '💣';
 
 var gBoard;
+
 var gGame = {
   isOn: false,
   revealedCount: 0,
   markedCount: 0,
   secsPassed: 0,
 };
-var gLevel = {
+
+const gLevel = {
   level: 'easy',
   size: EASY,
-  mines: 2,
+  mines: 0,
+};
+
+const gIntervals = {
+  timerId: null,
 };
 
 function onInit() {
   gBoard = buildBoard(gLevel.size);
-  buildBombs(gLevel.mines);
   renderBoard(gBoard, gLevel.level);
 }
 
@@ -41,30 +46,61 @@ function buildBoard(size) {
   return board;
 }
 
-function buildBombs(size) {
-  //! Bombs may be on the same cell!
-  for (var k = 0; k < size; k++) {
-    const cell = getRandomCell(gBoard);
-    cell.cell.isMine = true;
-    console.log(cell);
+function onCellClicked(el, ev) {
+  if (ev.button !== 0) return;
+  const pos = getPos(el);
+
+  if (gBoard[pos.i][pos.j].isMarked) return;
+
+  if (!gBoard[pos.i][pos.j].isRevealed) {
+    gBoard[pos.i][pos.j].isRevealed = true;
+    el.classList.add('revealed');
+
+    //? Set mines and timer once after first click
+    if (!gGame.isOn) {
+      gGame.isOn = true;
+      startTimer();
+      updateMinesCount();
+      setBombs(gLevel.mines);
+    }
+  }
+  if (gBoard[pos.i][pos.j].isRevealed && gBoard[pos.i][pos.j].isMine) {
+    el.classList.add('mine-hit');
+    renderCell(pos, BOMB);
   }
 }
 
-function onCellClicked(el, ev) {
-  const cellPos = getPos(el);
-  if (ev.button === 2) {
+function onCellMarked(el, ev) {
+  ev.preventDefault();
+
+  const pos = getPos(el);
+  const isMarked = gBoard[pos.i][pos.j].isMarked;
+  const cell = gBoard[pos.i][pos.j];
+
+  if (cell.isRevealed) return;
+
+  if (!isMarked && gLevel.mines - gGame.markedCount !== 0) {
+    cell.isMarked = true;
     gGame.markedCount++;
-    gBoard[cellPos.i][cellPos.j].isMarked = true;
-    renderCell(cellPos, FLAG);
+    renderCell(pos, FLAG);
+    updateMinesCount();
+  } else if (isMarked && gLevel.mines) {
+    cell.isMarked = false;
+    gGame.markedCount--;
+    renderCell(pos, '');
+    updateMinesCount();
   } else {
-    el.classList.add('revealed');
+    return;
   }
 }
 
 function onSetLevel(el) {
   if (!el) return;
 
+  const prevLevel = gLevel.level;
+
   const level = el.innerText.split(' ')[0].toLowerCase();
+
   switch (level) {
     case 'easy':
       gLevel.level = 'easy';
@@ -82,10 +118,13 @@ function onSetLevel(el) {
       return null;
   }
 
+  if (prevLevel === gLevel.level) return;
+
   const size = gLevel.size;
   const gameLevel = gLevel.level;
 
   setActive(gLevel.level);
   gBoard = buildBoard(size);
   renderBoard(gBoard, gameLevel);
+  restart();
 }
