@@ -35,7 +35,6 @@ footer {
   border-radius: 20px;
   padding: 30px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  max-width: 100%;
 }
 
 .difficulty-selector {
@@ -112,6 +111,11 @@ footer {
 
 .smiley:active {
   transform: scale(0.95);
+}
+
+.message {
+  font-size: 24px;
+  margin-bottom: 20px;
 }
 
 .board-container {

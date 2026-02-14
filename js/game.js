@@ -5,8 +5,12 @@ const MEDIUM = 8;
 const HARD = 12;
 const FLAG = '🚩';
 const BOMB = '💣';
+const SMILEY = '😊';
+const LOOSE = '🤕';
+const WINNER = '😎';
 
 var gBoard;
+var gEmptyCellsCount;
 
 var gGame = {
   isOn: false,
@@ -26,6 +30,7 @@ const gIntervals = {
 };
 
 function onInit() {
+  console.log('Game isOn:', gGame.isOn);
   gBoard = buildBoard(gLevel.size);
   renderBoard(gBoard, gLevel.level);
 }
@@ -49,24 +54,32 @@ function buildBoard(size) {
 function onCellClicked(el, ev) {
   if (ev.button !== 0) return;
   const pos = getPos(el);
+  const cell = gBoard[pos.i][pos.j];
 
-  if (gBoard[pos.i][pos.j].isMarked) return;
+  if (cell.isMarked) return;
 
-  if (!gBoard[pos.i][pos.j].isRevealed) {
-    gBoard[pos.i][pos.j].isRevealed = true;
+  if (!cell.isRevealed) {
+    cell.isRevealed = true;
     el.classList.add('revealed');
 
-    //? Set mines and timer once after first click
     if (!gGame.isOn) {
       gGame.isOn = true;
       startTimer();
       updateMinesCount();
-      setBombs(gLevel.mines);
+      const size = gLevel.mines;
+      placeBombs(size, gBoard);
     }
+    gGame.revealedCount++;
+    console.log(gEmptyCellsCount);
+    console.log('gGame.revealedCount: ', gGame.revealedCount);
+
+    if (gEmptyCellsCount === gGame.revealedCount) gameOver('winner');
   }
-  if (gBoard[pos.i][pos.j].isRevealed && gBoard[pos.i][pos.j].isMine) {
+  if (cell.isRevealed && cell.isMine) {
     el.classList.add('mine-hit');
     renderCell(pos, BOMB);
+    revealMines(gBoard);
+    gameOver();
   }
 }
 
@@ -74,8 +87,8 @@ function onCellMarked(el, ev) {
   ev.preventDefault();
 
   const pos = getPos(el);
-  const isMarked = gBoard[pos.i][pos.j].isMarked;
   const cell = gBoard[pos.i][pos.j];
+  const isMarked = cell.isMarked;
 
   if (cell.isRevealed) return;
 
@@ -89,8 +102,6 @@ function onCellMarked(el, ev) {
     gGame.markedCount--;
     renderCell(pos, '');
     updateMinesCount();
-  } else {
-    return;
   }
 }
 
@@ -119,12 +130,7 @@ function onSetLevel(el) {
   }
 
   if (prevLevel === gLevel.level) return;
-
-  const size = gLevel.size;
   const gameLevel = gLevel.level;
-
-  setActive(gLevel.level);
-  gBoard = buildBoard(size);
-  renderBoard(gBoard, gameLevel);
+  setActive(gameLevel);
   restart();
 }
