@@ -68,6 +68,14 @@ function setActive(level) {
   });
 }
 
+function setMinesNegsCount(board) {
+  for (var i = 0; i < board.length; i++) {
+    for (var j = 0; j < board[0].length; j++) {
+      countMinesAround({ i, j }, board);
+    }
+  }
+}
+
 function placeBombs(size, board) {
   for (var i = 0; i < size; i++) {
     const cell = getRandomCell(gBoard);
@@ -79,7 +87,6 @@ function placeBombs(size, board) {
 
 function getRandomCell() {
   const emptyCells = getCells(gBoard);
-  gEmptyCellsCount = emptyCells.length;
   const length = emptyCells.length;
   if (!emptyCells.length) return;
 
@@ -100,13 +107,14 @@ function getCells(board) {
       });
     }
   }
+  console.log(emptyCells.length);
   return emptyCells;
 }
 
 function getPos(el) {
   const elClasses = el.className.split(' ');
-  const i = elClasses[1].split('-')[1];
-  const j = elClasses[1].split('-')[2];
+  const i = +elClasses[1].split('-')[1];
+  const j = +elClasses[1].split('-')[2];
   return { i, j };
 }
 
@@ -129,7 +137,52 @@ function revealMines(board) {
   }
 }
 
-function gameOver(status) {
+function revealCell(cell, el) {
+  cell.isRevealed = true;
+  el.classList.add('revealed');
+
+  if (cell.minesAroundCount > 0) {
+    el.innerText = cell.minesAroundCount;
+  }
+}
+
+function countMinesAround({ i, j }, board) {
+  for (var x = i - 1; x <= i + 1; x++) {
+    if (x < 0 || x > board.length - 1) continue;
+    for (var y = j - 1; y <= j + 1; y++) {
+      if (y < 0 || y > board[x].length - 1) continue;
+      if (x === i && y === j) continue;
+      const cell = board[x][y];
+
+      if (cell.isMine) {
+        board[i][j].minesAroundCount++;
+      }
+    }
+  }
+}
+
+function expandReveal(board, i, j) {
+  if (!gGame.revealedCount) gGame.revealedCount++;
+
+  for (var x = i - 1; x <= i + 1; x++) {
+    if (x < 0 || x > board.length - 1) continue;
+    for (var y = j - 1; y <= j + 1; y++) {
+      if (y < 0 || y > board[0].length - 1) continue;
+      const cell = board[x][y];
+      if (cell.isMine || cell.isRevealed) continue;
+      const currCellEl = document.querySelector(`.cell-${x}-${y}`);
+      console.log(gGame.revealedCount);
+      cell.isRevealed = true;
+      gGame.revealedCount++;
+      currCellEl.classList.add('revealed');
+      if (board[x][y].minesAroundCount > 0) {
+        currCellEl.innerText = board[x][y].minesAroundCount;
+      }
+    }
+  }
+}
+
+function checkGameOver(status) {
   const smileyEl = document.querySelector('.smiley');
 
   if (status === 'winner') {

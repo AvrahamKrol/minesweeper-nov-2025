@@ -30,7 +30,6 @@ const gIntervals = {
 };
 
 function onInit() {
-  console.log('Game isOn:', gGame.isOn);
   gBoard = buildBoard(gLevel.size);
   renderBoard(gBoard, gLevel.level);
 }
@@ -41,7 +40,7 @@ function buildBoard(size) {
     board.push([]);
     for (var j = 0; j < size; j++) {
       board[i][j] = {
-        minesAroundCount: 4,
+        minesAroundCount: 0,
         isRevealed: false,
         isMine: false,
         isMarked: false,
@@ -53,34 +52,46 @@ function buildBoard(size) {
 
 function onCellClicked(el, ev) {
   if (ev.button !== 0) return;
+
   const pos = getPos(el);
   const cell = gBoard[pos.i][pos.j];
 
   if (cell.isMarked) return;
 
   if (!cell.isRevealed) {
-    cell.isRevealed = true;
-    el.classList.add('revealed');
-
     if (!gGame.isOn) {
+      //if not here than mine may be placed on the first clicked cell
+      // gGame.revealedCount++;
+      revealCell(cell, el);
+
       gGame.isOn = true;
       startTimer();
       updateMinesCount();
       const size = gLevel.mines;
       placeBombs(size, gBoard);
+      setMinesNegsCount(gBoard);
+      console.log(gBoard);
+      console.log(gGame.revealedCount);
     }
-    gGame.revealedCount++;
-    console.log(gEmptyCellsCount);
+    if (cell.minesAroundCount === 0) {
+      expandReveal(gBoard, pos.i, pos.j);
+    } else {
+      revealCell(cell, el);
+      gGame.revealedCount++;
+    }
+    if (gGame.revealedCount + gGame.markedCount === gBoard.length ** 2) {
+      checkGameOver('winner');
+    }
     console.log('gGame.revealedCount: ', gGame.revealedCount);
-
-    if (gEmptyCellsCount === gGame.revealedCount) gameOver('winner');
+    console.log('gEmptyCellsCount: ', gEmptyCellsCount);
   }
-  if (cell.isRevealed && cell.isMine) {
+  if (cell.isMine) {
     el.classList.add('mine-hit');
     renderCell(pos, BOMB);
     revealMines(gBoard);
-    gameOver();
+    checkGameOver();
   }
+  console.log(gGame.revealedCount);
 }
 
 function onCellMarked(el, ev) {
@@ -97,6 +108,9 @@ function onCellMarked(el, ev) {
     gGame.markedCount++;
     renderCell(pos, FLAG);
     updateMinesCount();
+    if (gGame.revealedCount + gGame.markedCount === gBoard.length ** 2) {
+      checkGameOver('winner');
+    }
   } else if (isMarked && gLevel.mines) {
     cell.isMarked = false;
     gGame.markedCount--;
