@@ -32,6 +32,14 @@ function renderMinesCount() {
   minesCounter.innerText = formattedMinesCount;
 }
 
+function renderBestTime() {
+  const time = document.querySelector('.time');
+  console.log(gLevel.level);
+  gGame.bestTime = JSON.parse(localStorage.getItem(`${gLevel.level}`)) || '';
+  console.log(gGame.bestTime);
+  time.innerText = gGame.bestTime ? gGame.bestTime + ' sec' : '';
+}
+
 function startTimer() {
   updateTimer();
   gIntervals.timerId = setInterval(updateTimer, 1000);
@@ -81,7 +89,6 @@ function placeBombs(size, board) {
     const cell = getRandomCell(gBoard);
     const cellPos = { i: cell.i, j: cell.j };
     board[cellPos.i][cellPos.j].isMine = true;
-    console.log(cell);
   }
 }
 
@@ -107,7 +114,6 @@ function getCells(board) {
       });
     }
   }
-  console.log(emptyCells.length);
   return emptyCells;
 }
 
@@ -168,19 +174,46 @@ function expandReveal(board, i, j) {
     if (x < 0 || x > board.length - 1) continue;
     for (var y = j - 1; y <= j + 1; y++) {
       if (y < 0 || y > board[0].length - 1) continue;
-      const cell = board[x][y];
-      if (cell.isMine || cell.isRevealed) continue;
+      const currCell = board[x][y];
+      if (currCell.isMine || currCell.isRevealed) continue;
       const currCellEl = document.querySelector(`.cell-${x}-${y}`);
-      console.log(gGame.revealedCount);
-      cell.isRevealed = true;
+      currCell.isRevealed = true;
       gGame.revealedCount++;
       currCellEl.classList.add('revealed');
-      if (board[x][y].minesAroundCount > 0) {
-        currCellEl.innerText = board[x][y].minesAroundCount;
+      if (currCell.minesAroundCount > 0) {
+        currCellEl.innerText = currCell.minesAroundCount;
+      } else if (currCell.minesAroundCount === 0) {
+        for (var k = x - 1; k <= x + 1; k++) {
+          if (k < 0 || k > board.length - 1) continue;
+          for (var z = y - 1; z <= y + 1; z++) {
+            if (z < 0 || z > board[0].length - 1) continue;
+            const currCell = board[k][z];
+            if (currCell.isMine || currCell.isRevealed) continue;
+            const currCellEl = document.querySelector(`.cell-${k}-${z}`);
+            currCell.isRevealed = true;
+            gGame.revealedCount++;
+            currCellEl.classList.add('revealed');
+            if (currCell.minesAroundCount > 0) {
+              currCellEl.innerText = currCell.minesAroundCount;
+            }
+          }
+        }
       }
     }
   }
 }
+
+// function recurseExpandReveal(board, i, j) {
+//   for (var x = 0; x < board.length; x++) {
+//     for (var y = 0; y < board[0].length; y++) {
+//       expandReveal(board, i, j);
+//       const cell = board[x][j];
+//       if (cell.minesAroundCount === 0) {
+//         expandReveal(board, x, y);
+//       }
+//     }
+//   }
+// }
 
 function checkGameOver(status) {
   const smileyEl = document.querySelector('.smiley');
@@ -204,6 +237,21 @@ function showMessage(status) {
   }
 }
 
+function saveBestTime(level) {
+  switch (level) {
+    case 'easy':
+      localStorage.setItem('easy', JSON.stringify(gGame.secsPassed));
+      break;
+    case 'medium':
+      localStorage.setItem('medium', JSON.stringify(gGame.secsPassed));
+      break;
+    case 'hard':
+      localStorage.setItem('hard', JSON.stringify(gGame.secsPassed));
+    default:
+      return;
+  }
+}
+
 function formateNum(num) {
   return String(num).padStart(3, '0');
 }
@@ -211,8 +259,6 @@ function formateNum(num) {
 function restart() {
   const message = document.querySelector('.message');
   const smileyEl = document.querySelector('.smiley');
-  const size = gLevel.size;
-  const gameLevel = gLevel.level;
 
   message.innerText = '';
   smileyEl.innerText = SMILEY;
@@ -232,8 +278,8 @@ function restart() {
   gLevel.mines = 0;
   gGame.secsPassed = 0;
 
-  gBoard = buildBoard(size);
-  renderBoard(gBoard, gameLevel);
+  onInit();
   renderMinesCount(gLevel.mines);
   renderTimer();
+  renderBestTime();
 }

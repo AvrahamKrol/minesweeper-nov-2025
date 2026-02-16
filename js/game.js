@@ -10,13 +10,13 @@ const LOOSE = '🤕';
 const WINNER = '😎';
 
 var gBoard;
-var gEmptyCellsCount;
 
 var gGame = {
   isOn: false,
   revealedCount: 0,
   markedCount: 0,
   secsPassed: 0,
+  bestTime: null,
 };
 
 const gLevel = {
@@ -30,6 +30,7 @@ const gIntervals = {
 };
 
 function onInit() {
+  renderBestTime();
   gBoard = buildBoard(gLevel.size);
   renderBoard(gBoard, gLevel.level);
 }
@@ -60,8 +61,8 @@ function onCellClicked(el, ev) {
 
   if (!cell.isRevealed) {
     if (!gGame.isOn) {
+      gGame.bestTime = localStorage.getItem(gLevel.level);
       //if not here than mine may be placed on the first clicked cell
-      // gGame.revealedCount++;
       revealCell(cell, el);
 
       gGame.isOn = true;
@@ -70,8 +71,6 @@ function onCellClicked(el, ev) {
       const size = gLevel.mines;
       placeBombs(size, gBoard);
       setMinesNegsCount(gBoard);
-      console.log(gBoard);
-      console.log(gGame.revealedCount);
     }
     if (cell.minesAroundCount === 0) {
       expandReveal(gBoard, pos.i, pos.j);
@@ -81,9 +80,14 @@ function onCellClicked(el, ev) {
     }
     if (gGame.revealedCount + gGame.markedCount === gBoard.length ** 2) {
       checkGameOver('winner');
+      if (!gGame.bestTime) {
+        saveBestTime(gLevel.level);
+        renderBestTime();
+      } else if (gGame.secsPassed < gGame.bestTime) {
+        saveBestTime(gLevel.level);
+        renderBestTime();
+      }
     }
-    console.log('gGame.revealedCount: ', gGame.revealedCount);
-    console.log('gEmptyCellsCount: ', gEmptyCellsCount);
   }
   if (cell.isMine) {
     el.classList.add('mine-hit');
@@ -91,7 +95,6 @@ function onCellClicked(el, ev) {
     revealMines(gBoard);
     checkGameOver();
   }
-  console.log(gGame.revealedCount);
 }
 
 function onCellMarked(el, ev) {
@@ -110,6 +113,13 @@ function onCellMarked(el, ev) {
     updateMinesCount();
     if (gGame.revealedCount + gGame.markedCount === gBoard.length ** 2) {
       checkGameOver('winner');
+      if (!gGame.bestTime) {
+        saveBestTime(gLevel.level);
+        renderBestTime();
+      } else if (gGame.secsPassed < gGame.bestTime) {
+        saveBestTime(gLevel.level);
+        renderBestTime();
+      }
     }
   } else if (isMarked && gLevel.mines) {
     cell.isMarked = false;
