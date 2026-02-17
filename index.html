@@ -24,12 +24,24 @@
           Hard (12x12)
         </button>
       </div>
-
+      <div class="game-controls">
+        <div class="controls hints" onclick="onGiveHint(this)"></div>
+        <div class="controls mega-hint" onclick="onGiveHint(this)">
+          <div>MEGA HINT</div>
+        </div>
+        <div class="controls undo" onclick="onUndo()"><div>UNDO</div></div>
+        <div class="controls terminate">
+          <div>TERMINATE</div>
+        </div>
+        <div class="controls safe"><div>SAFE CLICK</div></div>
+      </div>
       <div class="message"></div>
 
       <div class="game-header">
         <div class="counter mines-counter">000</div>
-        <button class="smiley" onmousedown="restart(event)">😊</button>
+        <div class="smiley-box" onmousedown="restart(event)">
+          <span class="lives-count"></span><span class="smiley-icon">😊</span>
+        </div>
         <div class="counter timer-counter">000</div>
       </div>
 

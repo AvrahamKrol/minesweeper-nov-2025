@@ -10,15 +10,20 @@ const LOOSE = '🤕';
 const WINNER = '😎';
 
 var gBoard;
+var gIsHint = false;
+var gHintCells = [];
 
 var gGame = {
   isOn: false,
   revealedCount: 0,
+  hintsCount: 3,
   markedCount: 0,
   secsPassed: 0,
   bestTime: null,
+  lives: 3,
 };
 
+const gHistoryState = [];
 const gLevel = {
   level: 'easy',
   size: EASY,
@@ -31,8 +36,11 @@ const gIntervals = {
 
 function onInit() {
   renderBestTime();
+  renderHints(gGame.hintsCount);
   gBoard = buildBoard(gLevel.size);
   renderBoard(gBoard, gLevel.level);
+  renderLives();
+  // saveBoardState(gBoard, gGame);
 }
 
 function buildBoard(size) {
@@ -51,33 +59,45 @@ function buildBoard(size) {
   return board;
 }
 
-function onCellClicked(el, ev) {
+function onCellClicked(el, ev, i, j) {
+  ev.preventDefault();
+  // *Forbid to click on cells after game is over
+  if (!gGame.isOn && gGame.revealedCount) return;
+
+  // *to disable on Mac when clicked on touch pad as a right click
   if (ev.button !== 0) return;
 
-  const pos = getPos(el);
-  const cell = gBoard[pos.i][pos.j];
+  const cell = gBoard[i][j];
 
   if (cell.isMarked) return;
 
   if (!cell.isRevealed) {
+    // First start
     if (!gGame.isOn) {
-      gGame.bestTime = localStorage.getItem(gLevel.level);
-      //if not here than mine may be placed on the first clicked cell
+      //*if not here than mine may be placed on the first clicked cell
       revealCell(cell, el);
 
       gGame.isOn = true;
       startTimer();
       updateMinesCount();
       const size = gLevel.mines;
-      placeBombs(size, gBoard);
+      placeMines(size, gBoard);
       setMinesNegsCount(gBoard);
     }
-    if (cell.minesAroundCount === 0) {
-      expandReveal(gBoard, pos.i, pos.j);
+    if (gIsHint) {
+      expandReveal(gBoard, i, j);
+      setTimeout(() => hideReveal(el, { i, j }), 1500);
+      return;
+      // *when  cell is empty reveal all empty cells
+    } else if (cell.minesAroundCount === 0 && !cell.isMine) {
+      expandReveal(gBoard, i, j);
+      // saveBoardState(gBoard, gGame);
     } else {
       revealCell(cell, el);
       gGame.revealedCount++;
+      // saveBoardState(gBoard, gGame);
     }
+    //*check if won
     if (gGame.revealedCount + gGame.markedCount === gBoard.length ** 2) {
       checkGameOver('winner');
       if (!gGame.bestTime) {
@@ -90,26 +110,37 @@ function onCellClicked(el, ev) {
     }
   }
   if (cell.isMine) {
+    if (gIsHint) return;
+    gGame.lives--;
+    renderLives();
     el.classList.add('mine-hit');
-    renderCell(pos, BOMB);
-    revealMines(gBoard);
-    checkGameOver();
+    renderCell({ i, j }, BOMB);
+    if (gGame.lives !== 0) {
+      setTimeout(() => hideReveal(el, { i, j }), 1500);
+    }
+    if (gGame.lives === 0) {
+      revealMines(gBoard);
+      checkGameOver();
+    }
   }
+  console.log(gGame.revealedCount);
 }
 
-function onCellMarked(el, ev) {
+function onCellMarked(el, ev, i, j) {
   ev.preventDefault();
+  // *let to add flags only after game started
+  if (!gGame.isOn && gGame.revealedCount) return;
 
-  const pos = getPos(el);
-  const cell = gBoard[pos.i][pos.j];
+  const cell = gBoard[i][j];
   const isMarked = cell.isMarked;
 
   if (cell.isRevealed) return;
 
+  //* let to add flags only if quantity of flags is not bigger than quantity of mines
   if (!isMarked && gLevel.mines - gGame.markedCount !== 0) {
     cell.isMarked = true;
     gGame.markedCount++;
-    renderCell(pos, FLAG);
+    renderCell({ i, j }, FLAG);
     updateMinesCount();
     if (gGame.revealedCount + gGame.markedCount === gBoard.length ** 2) {
       checkGameOver('winner');
@@ -124,9 +155,10 @@ function onCellMarked(el, ev) {
   } else if (isMarked && gLevel.mines) {
     cell.isMarked = false;
     gGame.markedCount--;
-    renderCell(pos, '');
+    renderCell({ i, j }, '');
     updateMinesCount();
   }
+  console.log(gGame.revealedCount);
 }
 
 function onSetLevel(el) {
