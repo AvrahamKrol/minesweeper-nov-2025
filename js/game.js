@@ -139,8 +139,10 @@ function onCellClicked(el, ev, i, j) {
     console.log(gGame.revealedCount);
   } else {
     if (gMega.count === 0) {
+      el.classList.add('selected-1');
       ((gMega.firstCell.i = i), (gMega.firstCell.j = j), gMega.count++);
     } else {
+      el.classList.add('selected-2');
       ((gMega.secondCell.i = i), (gMega.secondCell.j = j));
       const startRow = gMega.firstCell.i;
       const endRow = gMega.secondCell.i;
@@ -154,7 +156,6 @@ function onCellClicked(el, ev, i, j) {
 
 function onCellMarked(el, ev, i, j) {
   ev.preventDefault();
-  console.log('gGame.minesPosns: ', gGame.minesPosns);
   var markedCellIdx;
   // *let to add flags only after game started
   if (!gGame.isOn && gGame.revealedCount) return;
@@ -171,8 +172,6 @@ function onCellMarked(el, ev, i, j) {
     markedCellIdx = findMarkedIdx(i, j, true);
     var markedCellPosns = gGame.minesPosns.splice(markedCellIdx, 1)[0];
     gGame.markedCellPosns.push(markedCellPosns);
-    console.log('gGame.markedCellPosns: ', gGame.markedCellPosns);
-    console.log('gGame.minesPosns: ', gGame.minesPosns);
 
     renderCell({ i, j }, FLAG);
     updateFlagsCount();
@@ -194,16 +193,12 @@ function onCellMarked(el, ev, i, j) {
     if (gGame.markedCellPosns.length > 0) {
       markedCellIdx = findMarkedIdx(i, j);
       gGame.minesPosns.push(gGame.markedCellPosns[markedCellIdx]);
-      console.log('gGame.markedCellPosns: ', gGame.markedCellPosns);
-      console.log('gGame.minesPosns: ', gGame.minesPosns);
       gGame.markedCellPosns.splice(markedCellIdx, 1);
     }
     renderCell({ i, j }, '');
     updateFlagsCount();
     setMinesNegsCount(gBoard);
   }
-  console.log('gGame.markedCellPosns: ', gGame.markedCellPosns);
-  console.log(gGame.revealedCount);
 }
 
 function onSetLevel(el) {
@@ -271,7 +266,6 @@ function onTerminateMines(el) {
       minesPosns.splice(randomIdx, 1);
     }
   }
-  // change to mines to show
   gLevel.mines = gGame.minesPosns.length + gGame.markedCellPosns.length;
   renderMinesCount();
   updateFlagsCount();

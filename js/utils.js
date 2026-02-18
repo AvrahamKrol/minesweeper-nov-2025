@@ -5,8 +5,8 @@ function renderBoard(board, level) {
   for (var i = 0; i < board.length; i++) {
     str += '<tr class="row">';
     for (var j = 0; j < board[0].length; j++) {
-      // const isRevealed = board[i][j].isRevealed ? 'revealed' : '';
-      str += `<td class="cell cell-${i}-${j}" oncontextmenu="onCellMarked(this,event, ${i}, ${j});" onmousedown="onCellClicked(this,event, ${i}, ${j})"></td>`;
+      str += `<td class="cell cell-${i}-${j}" oncontextmenu="onCellMarked(this,event, ${i}, ${j});" 
+      onmousedown="onCellClicked(this,event, ${i}, ${j})" data-number=''></td>`;
     }
   }
   str += '</table>';
@@ -30,6 +30,7 @@ function renderCellsAfterTerminate(board) {
           currCellEl.innerText = '';
         } else {
           currCellEl.innerText = currCell.minesAroundCount;
+          currCellEl.dataset.number = currCellEl.innerText;
         }
       }
     }
@@ -64,7 +65,6 @@ function renderBestTime() {
 function renderLives() {
   const lives = document.querySelector('.lives-count');
   const mines = getMinesCount();
-  console.log('mines:', mines);
   if (gGame.lives > mines) {
     lives.innerText = mines;
     gGame.lives = mines;
@@ -209,6 +209,7 @@ function revealCell(cell, el) {
 
   if (cell.minesAroundCount > 0) {
     el.innerText = cell.minesAroundCount;
+    el.dataset.number = el.innerText;
   }
 }
 
@@ -248,6 +249,7 @@ function expandReveal(board, i, j) {
 
       if (currCell.minesAroundCount > 0) {
         currCellEl.innerText = currCell.minesAroundCount;
+        currCellEl.dataset.number = currCellEl.innerText;
       }
       if (currCell.isMine) {
         currCellEl.classList.add('mine-hit');
@@ -258,6 +260,7 @@ function expandReveal(board, i, j) {
         gGame.revealedCount++;
         if (currCell.minesAroundCount > 0) {
           currCellEl.innerText = currCell.minesAroundCount;
+          currCellEl.dataset.number = currCellEl.innerText;
         } else if (currCell.minesAroundCount === 0) {
           expandReveal(gBoard, x, y);
         }
@@ -267,7 +270,6 @@ function expandReveal(board, i, j) {
 }
 
 function expandRevealArea(board, startRow, endRow, startCol, endCol) {
-  console.log(startRow, endRow, startCol, endCol);
   gHintCells = [];
   for (var x = startRow; x <= endRow; x++) {
     for (var y = startCol; y <= endCol; y++) {
@@ -282,6 +284,7 @@ function expandRevealArea(board, startRow, endRow, startCol, endCol) {
 
       if (currCell.minesAroundCount > 0) {
         currCellEl.innerText = currCell.minesAroundCount;
+        currCellEl.dataset.number = currCellEl.innerText;
       }
       if (currCell.isMine) {
         currCellEl.classList.add('mine-hit');
@@ -299,7 +302,7 @@ function hideReveal(cellEl, i, j) {
       if (currCell.isMarked) continue;
       const currCellEl = document.querySelector(`.cell-${pos.i}-${pos.j}`);
       currCell.isRevealed = false;
-      currCellEl.classList.remove('revealed');
+      currCellEl.classList.remove('revealed', 'selected-1', 'selected-2');
       currCellEl.innerText = '';
       if (currCell.isMine) {
         currCellEl.classList.remove('mine-hit');
@@ -315,7 +318,6 @@ function hideReveal(cellEl, i, j) {
     cellEl.classList.remove('revealed');
     gBoard[i][j].isRevealed = false;
     renderCell({ i, j }, '');
-    console.log(gGame.revealedCount);
   }
 }
 
