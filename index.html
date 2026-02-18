@@ -26,14 +26,12 @@
       </div>
       <div class="game-controls">
         <div class="controls hints" onclick="onGiveHint(this)"></div>
-        <div class="controls mega-hint" onclick="onGiveHint(this)">
-          <div>MEGA HINT</div>
+        <div class="controls mega-hint" onclick="onIsMega(this)">MEGA HINT</div>
+        <!-- <div class="controls undo" onclick="onUndo()">UNDO</div> -->
+        <div class="controls terminate" onclick="onTerminateMines(this)">
+          TERMINATE
         </div>
-        <div class="controls undo" onclick="onUndo()"><div>UNDO</div></div>
-        <div class="controls terminate">
-          <div>TERMINATE</div>
-        </div>
-        <div class="controls safe"><div>SAFE CLICK</div></div>
+        <!-- <div class="controls safe">SAFE CLICK</div> -->
       </div>
       <div class="message"></div>
 
@@ -49,6 +47,7 @@
 
       <div class="stats">
         <p>⏱️ Best Time: <strong class="time"></strong></p>
+        <p>💣 Mines: <strong class="mines"></strong></p>
       </div>
     </div>
     <footer>Avraham Krol</footer>
