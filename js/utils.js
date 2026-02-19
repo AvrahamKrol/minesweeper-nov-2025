@@ -128,34 +128,45 @@ function setMinesNegsCount(board) {
   }
 }
 
-function getRandomCell() {
-  const emptyCells = getCells(gBoard);
+function getRandomCell(isSafe = false) {
+  var emptyCells;
+  if (isSafe) {
+    emptyCells = getCells(gBoard, isSafe);
+  } else {
+    emptyCells = getCells(gBoard);
+  }
   if (emptyCells.length === 0) return;
   const length = emptyCells.length;
-
   const randomIdx = getRandomIntInclusive(0, length - 1);
   return emptyCells[randomIdx];
 }
 
-function getCells(board) {
+function getCells(board, isSafe) {
   var emptyCells = [];
   for (var i = 0; i < board.length; i++) {
     for (var j = 0; j < board[0].length; j++) {
       const cell = board[i][j];
       if (cell.isMine) continue;
       if (cell.isRevealed) continue;
-      emptyCells.push({
-        i,
-        j,
-      });
+      if (cell.isMarked) continue;
+      if (isSafe) {
+        if (cell.minesAroundCount === 0) {
+          gGame.safeCells.push({ i, j });
+          emptyCells.push({ i, j });
+        }
+      } else {
+        emptyCells.push({ i, j });
+      }
     }
   }
   return emptyCells;
 }
 
-function findMarkedIdx(i, j, mark) {
-  if (mark) {
+function findIdx(i, j, toFind) {
+  if (toFind === 'mines') {
     return gGame.minesPosns.findIndex((mine) => mine.i === i && mine.j === j);
+  } else if (toFind === 'safe') {
+    return gGame.safeCells.findIndex((mine) => mine.i === i && mine.j === j);
   } else
     return gGame.markedCellPosns.findIndex(
       (mine) => mine.i === i && mine.j === j,
@@ -295,6 +306,16 @@ function expandRevealArea(board, startRow, endRow, startCol, endCol) {
 }
 
 function hideReveal(cellEl, i, j) {
+  if (gIsSafe) {
+    for (var x = 0; x < gGame.safeCells.length; x++) {
+      const pos = gGame.safeCells[x];
+      const currCell = gBoard[pos.i][pos.j];
+      const currCellEl = document.querySelector(`.cell-${pos.i}-${pos.j}`);
+      currCell.isRevealed = false;
+      currCellEl.classList.remove('empty');
+    }
+    gIsSafe = false;
+  }
   if (gIsHint || gMega.isMega) {
     for (var x = 0; x < gHintCells.length; x++) {
       const pos = gHintCells[x];
@@ -302,7 +323,12 @@ function hideReveal(cellEl, i, j) {
       if (currCell.isMarked) continue;
       const currCellEl = document.querySelector(`.cell-${pos.i}-${pos.j}`);
       currCell.isRevealed = false;
-      currCellEl.classList.remove('revealed', 'selected-1', 'selected-2');
+      currCellEl.classList.remove(
+        'revealed',
+        'selected-1',
+        'selected-2',
+        'empty',
+      );
       currCellEl.innerText = '';
       if (currCell.isMine) {
         currCellEl.classList.remove('mine-hit');
@@ -385,6 +411,7 @@ function restart() {
     lives: 3,
     minesPosns: [],
     markedCellPosns: [],
+    safeCells: [],
   };
 
   gMega = {

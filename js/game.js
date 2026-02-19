@@ -11,7 +11,7 @@ const WINNER = '😎';
 
 var gBoard;
 var gIsHint = false;
-var gIsMega = false;
+var gIsSafe = false;
 var gHintCells = [];
 
 var gGame = {
@@ -24,6 +24,7 @@ var gGame = {
   lives: 3,
   minesPosns: [],
   markedCellPosns: [],
+  safeCells: [],
 };
 
 var gMega = {
@@ -169,7 +170,7 @@ function onCellMarked(el, ev, i, j) {
   if (!isMarked && gLevel.mines - gGame.markedCount !== 0) {
     cell.isMarked = true;
     gGame.markedCount++;
-    markedCellIdx = findMarkedIdx(i, j, true);
+    markedCellIdx = findIdx(i, j, 'mines');
     var markedCellPosns = gGame.minesPosns.splice(markedCellIdx, 1)[0];
     gGame.markedCellPosns.push(markedCellPosns);
 
@@ -191,7 +192,7 @@ function onCellMarked(el, ev, i, j) {
     gGame.markedCount--;
 
     if (gGame.markedCellPosns.length > 0) {
-      markedCellIdx = findMarkedIdx(i, j);
+      markedCellIdx = findIdx(i, j);
       gGame.minesPosns.push(gGame.markedCellPosns[markedCellIdx]);
       gGame.markedCellPosns.splice(markedCellIdx, 1);
     }
@@ -272,4 +273,12 @@ function onTerminateMines(el) {
   setMinesNegsCount(gBoard);
   renderCellsAfterTerminate(gBoard);
   el.classList.add('hidden');
+}
+
+function onSafeClick() {
+  gIsSafe = true;
+  const cell = getRandomCell(true);
+  const safeCellEl = document.querySelector(`.cell-${cell.i}-${cell.j}`);
+  safeCellEl.classList.add('empty');
+  setTimeout(() => hideReveal(safeCellEl, cell.i, cell.j), 1500);
 }
