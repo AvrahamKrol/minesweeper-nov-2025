@@ -76,7 +76,6 @@ footer {
   color: white;
   cursor: pointer;
   transition: transform 0.2s ease;
-  margin-right: 10px;
 }
 
 .hints {
@@ -214,6 +213,12 @@ footer {
   transition: all 0.1s ease;
 }
 
+.cell.revealed {
+  background: #e0e0e0;
+  border: 1px solid #999;
+  cursor: default;
+}
+
 .cell.selected-1,
 .cell.selected-2,
 .cell.empty {
@@ -227,12 +232,6 @@ footer {
 
 .cell.empty {
   border: 3px solid #dbb701;
-}
-
-.cell.revealed {
-  background: #e0e0e0;
-  border: 1px solid #999;
-  cursor: default;
 }
 
 .cell.flagged {
