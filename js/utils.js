@@ -15,6 +15,12 @@ function updateTimer() {
   renderTimer();
 }
 
+function endGame() {
+  stopTimer();
+  revealMines(gBoard);
+  gGame.isOn = false;
+}
+
 function updateFlagsCount() {
   if (!gLevel.mines && !gGame.markedCount) {
     gLevel.mines = getMinesCount();
@@ -38,14 +44,15 @@ function findIdx(i, j, toFind) {
 
 function showMessage(status) {
   const message = document.querySelector('.message');
-  if (status === 'loose') {
+  if (status === 'lose') {
     message.innerText = 'You lost 😔. Try again! 💪';
-  } else {
-    message.innerText = '🎉🎉🎉 You won! 🎉🎉🎉';
+    return;
   }
+  message.innerText = '🎉🎉🎉 You won! 🎉🎉🎉';
 }
 
 function saveBestTime(level) {
+  console.log(gGame.secsPassed);
   switch (level) {
     case 'easy':
       localStorage.setItem('easy', JSON.stringify(gGame.secsPassed));
@@ -62,4 +69,8 @@ function saveBestTime(level) {
 
 function formateNum(num) {
   return String(num).padStart(3, '0');
+}
+
+function getTotalSafeCells() {
+  return gBoard.length ** 2;
 }

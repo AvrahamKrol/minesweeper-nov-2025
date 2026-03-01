@@ -104,11 +104,12 @@ function onCellClicked(el, ev, i, j) {
     }
 
     if (!cell.isRevealed && !cell.isMine) {
-      // if (gIntervals.safeTimer) {
-      //   clearInterval(gIntervals.safeTimer);
-      // }
+      if (gIntervals.safeTimer) {
+        clearInterval(gIntervals.safeTimer);
+      }
       // *First start
       if (!gGame.isOn) {
+        //*if not here than mine may be placed on the first clicked cell
         revealCell(cell, el);
 
         gGame.isOn = true;
@@ -118,6 +119,7 @@ function onCellClicked(el, ev, i, j) {
         placeMines(size, gBoard);
         setMinesNegsCount(gBoard);
         renderMinesCount();
+        if (cell.minesAroundCount === 0) expandReveal(gBoard, i, j);
       }
       //* save state on each new click
       gState = {
@@ -137,20 +139,14 @@ function onCellClicked(el, ev, i, j) {
         gPrevBoardState.push(gState);
         expandReveal(gBoard, i, j);
       } else {
+        // if (!cell.isRevealed) {
         revealCell(cell, el);
         gPrevBoardState.push(gState);
-        gGame.revealedCount++;
       }
+      // }
       //*check if won
       console.log('revealedCount:', gGame.revealedCount);
       checkGameOver();
-      if (!gGame.bestTime) {
-        saveBestTime(gLevel.level);
-        renderBestTime();
-      } else if (gGame.secsPassed < gGame.bestTime) {
-        saveBestTime(gLevel.level);
-        renderBestTime();
-      }
     }
     if (cell.isMine) {
       if (gIsHint) return;
@@ -206,13 +202,6 @@ function onCellMarked(el, ev, i, j) {
     updateFlagsCount();
     setMinesNegsCount(gBoard);
     checkGameOver();
-    if (!gGame.bestTime) {
-      saveBestTime(gLevel.level);
-      renderBestTime();
-    } else if (gGame.secsPassed < gGame.bestTime) {
-      saveBestTime(gLevel.level);
-      renderBestTime();
-    }
   } else if (isMarked && gLevel.mines) {
     cell.isMarked = false;
     gGame.markedCount--;
@@ -302,9 +291,10 @@ function onTerminateMines(el) {
 
 function onSafeClick() {
   if (gGame.isOn) {
+    gGame.safeCells = getEmptyCellsPosns(gBoard);
     console.log('safeCells:', gGame.safeCells);
     gIsSafe = true;
-    const cell = getRandomCellPos(gBoard, true);
+    const cell = getRandomCellPos(gBoard);
     const safeCellEl = document.querySelector(`.cell-${cell.i}-${cell.j}`);
     safeCellEl.classList.add('empty');
     gIntervals.safeTimer = setTimeout(

@@ -21,34 +21,30 @@ function setMinesNegsCount(board) {
 }
 
 function getRandomCellPos(isSafe = false) {
-  var emptyCells;
   if (isSafe) {
-    emptyCells = getCellsPos(gBoard, isSafe);
+    gGame.safeCells = getEmptyCellsPosns(gBoard, isSafe);
+    if (gGame.safeCells.length === 0) return;
+    const length = gGame.safeCells.length;
+    const randomIdx = getRandomIntInclusive(0, length - 1);
+    return gGame.safeCells[randomIdx];
   } else {
-    emptyCells = getCellsPos(gBoard);
+    const emptyCells = getEmptyCellsPosns(gBoard);
+    if (emptyCells.length === 0) return;
+    const length = emptyCells.length;
+    const randomIdx = getRandomIntInclusive(0, length - 1);
+    return emptyCells[randomIdx];
   }
-  if (emptyCells.length === 0) return;
-  const length = emptyCells.length;
-  const randomIdx = getRandomIntInclusive(0, length - 1);
-  return emptyCells[randomIdx];
 }
 
-function getCellsPos(board, isSafe) {
-  var emptyCells = [];
+function getEmptyCellsPosns(board) {
+  const emptyCells = [];
   for (var i = 0; i < board.length; i++) {
     for (var j = 0; j < board[0].length; j++) {
       const cell = board[i][j];
       if (cell.isMine) continue;
       if (cell.isRevealed) continue;
       if (cell.isMarked) continue;
-      if (isSafe) {
-        if (cell.minesAroundCount === 0) {
-          gGame.safeCells.push({ i, j });
-          emptyCells.push({ i, j });
-        }
-      } else {
-        emptyCells.push({ i, j });
-      }
+      emptyCells.push({ i, j });
     }
   }
   return emptyCells;
@@ -96,7 +92,7 @@ function revealMines(board) {
 function revealCell(cell, el) {
   cell.isRevealed = true;
   el.classList.add('revealed');
-
+  if (gGame.isOn) gGame.revealedCount++;
   if (cell.minesAroundCount > 0) {
     el.innerText = cell.minesAroundCount;
     el.dataset.number = el.innerText;
@@ -120,7 +116,10 @@ function countMinesAround({ i, j }, board) {
 
 function expandReveal(board, i, j) {
   //* if it's a first click
-  if (!gGame.revealedCount) gGame.revealedCount++;
+  if (!gGame.revealedCount) {
+    gGame.revealedCount++;
+    return;
+  }
 
   gHintCells = [];
 
@@ -152,8 +151,6 @@ function expandReveal(board, i, j) {
           currCellEl.innerText = currCell.minesAroundCount;
           currCellEl.dataset.number = currCellEl.innerText;
         } else if (currCell.minesAroundCount === 0) {
-          const cellIdx = findIdx(x, y, 'safe');
-          gGame.safeCells.splice(cellIdx, 1);
           expandReveal(gBoard, x, y);
         }
       }
@@ -195,7 +192,7 @@ function hideReveal(cellEl, i, j) {
       currCell.isRevealed = false;
       currCellEl.classList.remove('empty');
     }
-    gIsSafe = false;
+    // gIsSafe = false;
   }
   if (gIsHint || gMega.isMega) {
     for (var x = 0; x < gHintCells.length; x++) {
@@ -215,35 +212,39 @@ function hideReveal(cellEl, i, j) {
     gMega.isMega = false;
     gHintCells = [];
   } else {
-    if (!gBoard[i][j].isMine) {
+    const cell = gBoard[i][j];
+    if (!cell.isMine && !gIsSafe) {
       gGame.revealedCount--;
     }
+
     cellEl.classList.remove('mine-hit');
     cellEl.classList.remove('revealed');
-    gBoard[i][j].isRevealed = false;
+    cell.isRevealed = false;
     renderCell({ i, j }, '');
   }
+  gIsSafe = false;
 }
 
 function checkGameOver() {
-  var isGameOver = false;
   const smileyEl = document.querySelector('.smiley-icon');
-  console.log('minesPosns:', gGame.minesPosns);
-  console.log('markedPosns:', gGame.markedCellPosns);
-  if (gGame.revealedCount === gBoard.length ** 2 - gLevel.mines) {
+  const totalCells = getTotalSafeCells();
+
+  if (gGame.revealedCount === totalCells - gLevel.mines) {
     smileyEl.innerText = WINNER;
-    showMessage('win');
-    isGameOver = true;
-  } else if (gGame.lives === 0) {
-    smileyEl.innerText = LOOSE;
-    showMessage('loose');
-    isGameOver = true;
+    showMessage();
+    if (!gGame.bestTime || gGame.secsPassed < gGame.bestTime) {
+      saveBestTime(gLevel.level);
+      renderBestTime();
+    }
+    endGame();
+    return;
   }
 
-  if (isGameOver) {
-    stopTimer();
-    revealMines(gBoard);
-    gGame.isOn = false;
+  if (gGame.lives === 0) {
+    smileyEl.innerText = LOOSE;
+    showMessage('lose');
+    endGame();
+    return;
   }
 }
 
